@@ -12,7 +12,6 @@ paginate: true
 
 ### Functions - first class citizens
 
-- Functions can
 - Functions can be both lower order and higher order
 - Functions can have inner functions
 - Can be chained together
@@ -106,7 +105,7 @@ let y = Some 5
 
 ---
 
-### Applicatives - the solution
+### Applicatives - The solution
 
 ```f#
 let apply fOpt xOpt =
@@ -120,11 +119,16 @@ let result =
     |> apply <| y   // Some 8
 ```
 
+---
+
 ### Applicatives - comparison to functors and monads
 
 - Applicatives sits in between functors and monads
 - Functors apply normal functions to wrapped values
+  - `Some 5 |> Option.map ((+) 1)  // Some 6`
 - Applicatives apply wrapped functions to wrapped values
+  - `Some ((+) 1) <*> Some 5  // Some 6`
 - Monads apply a function that returns a wrapped value, to a wrapped value
+  - `Some 5 |> Option.bind (fun x -> Some (x + 1))  // Some 6`
 
 ---
