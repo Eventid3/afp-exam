@@ -7,7 +7,7 @@ MD_FILES=$(wildcard *.md)
 PDF_FILES=$(patsubst %.md,pdfs/%.pdf,$(MD_FILES))
 
 slide:
-	npx @marp-team/marp-cli@latest -w $(file) --allow-local-files -o ./slides/$(htmlname) & brave ./slides/$(htmlname)
+	npx @marp-team/marp-cli@latest -w $(file) --allow-local-files -o ./slides/$(htmlname) & brave ~/uni/6_semester/afp/afp-exam/slides/$(htmlname)
 
 pdf:
 	pandoc $(file) -o pdfs/$(pdfname)
