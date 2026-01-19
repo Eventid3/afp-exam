@@ -6,7 +6,7 @@ date: Jan 2026
 paginate: true
 style: |
   section {
-    font-size: 30px;
+    font-size: 26px;
   }
 ---
 

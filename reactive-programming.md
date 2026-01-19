@@ -4,6 +4,10 @@ author: Esben Inglev
 theme: gaia
 date: Jan 2026
 paginate: true
+style: |
+  section {
+    font-size: 26px;
+  }
 ---
 
 # Reactive Programming
@@ -97,7 +101,7 @@ timer.Stop()
 
 ---
 
-### Observable Module in F #
+### Observable Module in F
 
 - F# provides Observable module for functional operations
 - Transform streams like collections
