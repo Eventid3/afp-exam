@@ -11,7 +11,7 @@ style: |
 ---
 
 # AKKA
-
+<!-- Emne: Akka.NET - et framework til at bygge samtidige og distribuerede systemer vha. aktør-modellen. -->
 ---
 
 ### What is AKKA?
@@ -22,13 +22,10 @@ style: |
   - Messages
 - Designed for building concurrent, distributed systems
 <!--
-Akka.NET er et framework, der implementerer aktør-modellen (actor model).
-
-De to helt centrale byggeklodser i denne model er _aktører_ og _beskeder_.
-
-Hele formålet med Akka.NET er at gøre det nemmere at bygge systemer, der er samtidige (kan gøre mange ting på én gang) og distribuerede (kan køre på tværs af flere maskiner), uden at vi selv skal bøvle med de lav-niveau detaljer som tråde, låse og netværkskommunikation.
+- Akka.NET er et 'actor model' framework.
+- Centrale byggeklodser: Aktører og Beskeder.
+- Formål: Simplificere udviklingen af samtidige og distribuerede systemer. Abstraherer tråde, låse, netværk væk.
 -->
-
 ---
 
 ### What is an actor?
@@ -40,16 +37,13 @@ Hele formålet med Akka.NET er at gøre det nemmere at bygge systemer, der er sa
 - Actors within the system can send messages to each other
   - Fire and forget
   - Send and wait for response
-  <!--
-  Hvad er en aktør så? En aktør er en fundamental enhed, der kan modtage og sende beskeder.
-
-En aktør har sin egen private tilstand, som ingen andre kan tilgå direkte. Den eneste måde at interagere med en aktør på er ved at sende den en besked. Dette er nøglen til at undgå 'race conditions' og behovet for låse.
-
-Beskeder er typisk immutable, hvilket passer perfekt med F# og den funktionelle stil.
-
-Alle aktører lever inde i et "Actor System". Aktører kan sende beskeder til hinanden, enten som "fire-and-forget", hvor man ikke forventer et svar, eller som "ask", hvor man venter på et svar.
+<!--
+- En aktør er en enhed, der modtager og sender beskeder.
+- Egen, privat tilstand. Interaktion kun via beskeder (undgår race conditions).
+- Beskeder er typisk immutable. Passer godt til F#.
+- Lever i et 'Actor System'.
+- Kommunikation: "Fire-and-forget" (`Tell`) eller request-response (`Ask`).
 -->
-
 ---
 
 ### Actor Lifecycle
@@ -67,16 +61,12 @@ override x.PreStart() =
 override x.PostStop() =
     printfn "Actor stopped"
 ```
-
 <!--
-En aktør har en veldefineret livscyklus med metoder, vi kan "override" for at køre kode på bestemte tidspunkter.
-
-- `PreStart` kaldes én gang, når aktøren bliver skabt, *før* den begynder at modtage beskeder. Det er et godt sted at initialisere ressourcer.
-- `Receive` er ikke en metode, men den tilstand, hvor aktøren modtager og behandler beskeder.
-- `PostStop` kaldes, når aktøren bliver stoppet. Her kan man rydde op.
-- `PreRestart` og `PostRestart` er relateret til fejlhåndtering, som vi kommer til senere. De giver os mulighed for at gemme og genoprette tilstand, når en aktør genstarter efter en fejl.
+- Veldefineret livscyklus med hooks, man kan override:
+- `PreStart`: Til initialisering, før første besked.
+- `PostStop`: Til oprydning, efter aktøren er stoppet.
+- `PreRestart`/`PostRestart`: Bruges ifm. fejlhåndtering og genstart.
 -->
-
 ---
 
 ### Creation of actor system and actor
@@ -98,15 +88,12 @@ let greeterActor (mailbox: Actor<string>) =
 let greeter =
     spawn system "greeter" greeterActor
 ```
-
 <!--
-Her ser vi, hvordan man kommer i gang.
-
-1.  Først skal vi have et `ActorSystem`. Det er containeren for alle vores aktører. Vi giver det et navn.
-2.  Så definerer vi selve aktørens opførsel. I Akka.NET.FSharp gøres dette typisk med en funktion, der tager en `mailbox` som argument. Mailboxen er her, beskederne ankommer. Vi bruger en rekursiv `loop` og et `actor { ... }` computation expression til at modtage og behandle beskeder én ad gangen.
-3.  Til sidst "spawner" vi aktøren ind i systemet med `spawn`. Vi giver den et navn ("greeter") og den funktion, der definerer dens opførsel. `spawn` returnerer en reference til aktøren (`IActorRef`), som vi kan bruge til at sende beskeder til den.
+- Trin 1: Opret et `ActorSystem` (en container for aktører).
+- Trin 2: Definer aktørens opførsel (en funktion der tager en `mailbox`).
+- Logik: Typisk en rekursiv `loop` med et `actor { ... }` computation expression.
+- Trin 3: "Spawn" aktøren ind i systemet med et navn og en opførsels-funktion. `spawn` returnerer en `IActorRef`.
 -->
-
 ---
 
 ### Messages
@@ -127,15 +114,11 @@ type PersonMsg = {
     Age: int
 }
 ```
-
 <!--
-Beskeder kan være næsten enhver F# type. Det er god praksis at bruge veldefinerede typer som Records eller Discriminated Unions (DUs).
-
-DUs er især velegnede til at definere de forskellige typer af kommandoer, en aktør kan modtage. Som her med `CounterMsg`.
-
-Bemærk `GetCount`-casen. Den indeholder en `AsyncReplyChannel`. Dette er en del af "ask"-mønsteret. Det er en midlertidig kanal, som afsenderen lytter på, og som `GetCount`-modtageren kan bruge til at sende et svar tilbage.
+- Beskeder bør være veldefinerede typer (Records, Discriminated Unions).
+- DUs er ideelle til at definere en aktørs kommandoer.
+- `AsyncReplyChannel`: Bruges til "ask"-mønsteret. En kanal til at sende svar tilbage til afsenderen.
 -->
-
 ---
 
 ### Message Handling Example
@@ -153,17 +136,11 @@ let counterActor (mailbox: Actor<CounterMsg>) =
     }
     loop 0
 ```
-
 <!--
-Her er et komplet eksempel på en `counterActor`, der bruger `CounterMsg` DU'en.
-
-Aktøren holder sin tilstand – `count` – som en parameter i sin rekursive `loop`-funktion. Dette er en standard funktionel måde at håndtere tilstand på. Tilstanden er fuldstændig privat for aktøren.
-
-I `actor`-blokken modtager vi en besked og pattern-matcher på den.
-- Ved `Increment` og `Decrement` kalder vi `loop` rekursivt med den nye, opdaterede tælling.
-- Ved `GetCount` bruger vi den medfølgende `channel` til at sende den nuværende `count` tilbage til afsenderen. Derefter fortsætter vi løkken med den uændrede `count`.
+- Tilstand (`count`) håndteres funktionelt som parameter i den rekursive `loop`. Tilstanden er 100% privat.
+- I `actor`-blokken: Modtag besked, pattern match, og kald `loop` rekursivt med ny tilstand.
+- `GetCount`: Sender svar tilbage via den medfølgende `channel`.
 -->
-
 ---
 
 ### Actor communication
@@ -182,19 +159,12 @@ greeter <! "Hello World"
 // Request-response
 let! response = greeter <? GetValue
 ```
-
 <!--
-Hvordan kommunikerer aktører?
-
-Vi bruger en `IActorRef`, som er en letvægtsreference eller "adresse" til en aktør.
-
-Der er to primære måder at sende på:
-- `Tell`, med operatoren `<!`. Dette er "fire-and-forget". Vi sender beskeden og fortsætter med det samme. Vi får ikke noget svar og ved ikke, om beskeden blev modtaget.
-- `Ask`, med operatoren `<?`. Dette er for request-response. `Ask` returnerer en `Async<T>`, som vi kan `await`'e for at få et svar. Bag kulisserne skaber den den `AsyncReplyChannel`, vi så før.
-
-Hver aktør har en mailbox, hvor indkommende beskeder bliver lagt i kø. En aktør behandler altid kun én besked ad gangen. Dette garanterer, at dens interne tilstand aldrig bliver korrumperet af samtidige adgange.
+- Kommunikation via `IActorRef` (en letvægts-reference/adresse).
+- `Tell` (`<!`): Fire-and-forget. Asynkront, intet svar.
+- `Ask` (`<?`): Request-response. Returnerer en `Async<T>`, der kan ventes på.
+- Mailbox: Hver aktør har en kø. Beskeder behandles én ad gangen, hvilket garanterer trådsikkerhed for tilstanden.
 -->
-
 ---
 
 ### Actor Hierarchy
@@ -207,19 +177,12 @@ Hver aktør har en mailbox, hvor indkommende beskeder bliver lagt i kø. En akt�
   - **Stop**: Terminate actor
   - **Escalate**: Pass failure to grandparent
   - **Resume**: Continue with current state
-  <!--
-  Et af de mest kraftfulde koncepter i Akka er aktør-hierarkiet. Aktører er ikke bare en flad liste; de er organiseret i et træ-lignende hierarki.
-
-Hver aktør har en forælder (undtagen rod-aktørerne øverst oppe). Denne forælder har et særligt ansvar: at _overvåge_ (supervise) sine børn.
-
-Hvis en barn-aktør crasher (kaster en exception), bliver forælderen notificeret. Forælderen kan så beslutte, hvad der skal ske, baseret på en "supervision strategy":
-
-- **Restart:** Genstart barnet (skaber en ny instans). Dette er standard.
-- **Stop:** Stop barnet permanent.
-- **Escalate:** Giv fejlen videre opad til sin egen forælder (bedsteforælderen).
-- **Resume:** Ignorer fejlen og lad barnet fortsætte (risikabelt!).
-  -->
-
+<!--
+- Aktører er organiseret i et træ-hierarki.
+- Forældre-aktører overvåger (supervises) deres børn.
+- Hvis et barn crasher (kaster exception), beslutter forælderen, hvad der skal ske (en "supervision strategy").
+- Strategier: `Restart` (standard), `Stop`, `Escalate` (send opad), `Resume`.
+-->
 ---
 
 ### Supervision Example
@@ -235,19 +198,12 @@ let supervisor (mailbox: Actor<'a>) =
     mailbox.Context.SetSupervisorStrategy(strategy)
     // ... actor logic
 ```
-
 <!--
-Her er et eksempel på, hvordan en forælder-aktør kan definere sin overvågningsstrategi.
-
-`Strategy.OneForOne` betyder, at strategien kun gælder for det ene barn, der fejlede. (Alternativet er `OneForAll`, hvor alle søskende også bliver påvirket).
-
-Vi giver en funktion, der tager exceptionen som input og returnerer en `Directive`. Her siger vi:
-- Hvis fejlen er en `DivideByZeroException`, så genstart barnet.
-- For alle andre fejl, eskaler problemet til min egen forælder.
-
-Dette "lad det crashe"-princip er centralt i Akka. I stedet for at skrive defensiv kode overalt, lader vi fejl ske og håndterer dem på et højere niveau i hierarkiet.
+- Eksempel på en `supervisor` strategi.
+- `Strategy.OneForOne`: Gælder kun for det barn, der fejlede.
+- Logik: Match på exception type og returner en `Directive`.
+- "Lad det crashe": Centralt princip. Fejl håndteres på et højere niveau, ikke defensivt i hver funktion.
 -->
-
 ---
 
 ### Actor Hierarchy Benefits
@@ -263,49 +219,34 @@ Dette "lad det crashe"-princip er centralt i Akka. I stedet for at skrive defens
     /worker1
     /worker2
 ```
-
 <!--
-Dette hierarki giver en række fordele:
-
-- **Fejlisolering:** En fejl i én del af systemet (et sub-træ) påvirker ikke resten af systemet.
-- **Robusthed (Resilience):** Systemet kan "helbrede" sig selv ved at genstarte fejlede dele.
-- **Klart ansvar:** Forskellige niveauer i hierarkiet kan have forskellige ansvarsområder. En supervisor styrer workers, en anden håndterer database-forbindelser osv.
-- **Location Transparency:** Aktører refereres via deres sti i hierarkiet (f.eks. `/user/supervisor/worker1`). Denne sti er den samme, uanset om aktøren kører på den samme maskine eller en anden maskine i et netværk. Det gør det nemt at distribuere systemet.
+- **Fejlisolering:** Fejl i ét sub-træ påvirker ikke resten af systemet.
+- **Robusthed:** Systemet kan "helbrede" sig selv ved at genstarte dele.
+- **Ansvarsfordeling:** Hierarkiet kan afspejle systemets ansvarsområder.
+- **Location Transparency:** Aktører refereres via sti (`/user/..`), uafhængigt af om de er lokale eller på en anden maskine.
 -->
-
 ---
 
 ### Actor Selection
 
 - Find actors by path instead of direct reference
 - Useful for dynamic actor discovery
-
 ```fsharp
 // Absolute path
 let actor =
     system.ActorSelection("/user/greeter")
-
 // Relative path from parent
 let child =
     mailbox.Context.ActorSelection("./child")
-
 // Wildcard selection
 let workers =
     system.ActorSelection("/user/supervisor/*")
 ```
-
 <!--
-Hvis man ikke har en direkte `IActorRef` til en aktør, kan man finde den ved hjælp af dens sti. Dette kaldes "Actor Selection".
-
-Det er nyttigt, hvis man skal kommunikere med en aktør, man ikke selv har skabt, eller hvis aktører bliver skabt dynamisk.
-
-Vi kan bruge absolutte stier, der starter fra roden (`/user` er roden for alle bruger-definerede aktører).
-
-Vi kan bruge relative stier fra en eksisterende aktørs `Context`.
-
-Vi kan endda bruge wildcards (`*`) til at sende en besked til flere aktører på én gang, f.eks. alle workers under en supervisor.
+- "Actor Selection": Find en aktør via dens sti, hvis man ikke har en `IActorRef`.
+- Nyttigt til at kommunikere med aktører, man ikke selv har skabt.
+- Stier kan være absolutte, relative eller bruge wildcards (`*`).
 -->
-
 ---
 
 ### Complete Example
@@ -325,15 +266,10 @@ let system = ActorSystem.Create("Demo")
 let worker = spawn system "worker" workerActor
 worker <! Process "task1"
 ```
-
 <!--
-Her er et helt simpelt, men komplet, "hello world" eksempel.
-
-Vi definerer en `WorkerMsg`, en `workerActor` der kan modtage den, opretter et `ActorSystem`, spawner vores worker, og sender den en besked med `Tell` (`<!`).
-
-Dette viser den grundlæggende skabelon for at arbejde med aktører i Akka.NET.FSharp.
+- "Hello world" eksempel, der viser den grundlæggende skabelon:
+- Definer besked -> Definer aktør-opførsel -> Opret system -> Spawn aktør -> Send besked.
 -->
-
 ---
 
 ### Key Benefits of AKKA
@@ -344,15 +280,8 @@ Dette viser den grundlæggende skabelon for at arbejde med aktører i Akka.NET.F
 - Scales easily to distributed systems
 - Functional programming friendly
 <!--
-For at opsummere, så giver Akka.NET os:
-
-- En model for samtidighed, der er baseret på beskeder i stedet for delt tilstand og låse, hvilket er meget simplere at ræsonnere over.
-- Indbygget fejl-tolerance via overvågnings-hierarkiet.
-- "Location transparency", som gør det nemt at skalere fra en enkelt proces til et distribueret cluster.
-- Og en model, der passer utroligt godt sammen med den funktionelle tankegang i F# med immutable beskeder og tilstandshåndtering via funktionsparametre.
-
-Tak.
+- Samtidighed uden låse/delt tilstand.
+- Indbygget fejl-tolerance via supervision.
+- Location transparency (nem skalering til distribueret system).
+- Passer perfekt til FP-paradigmet (immutable beskeder etc.).
 -->
-
----
-
