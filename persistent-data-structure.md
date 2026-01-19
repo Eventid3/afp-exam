@@ -53,7 +53,7 @@ Ulempen kan være et højere hukommelsesforbrug, da vi skaber nye objekter i ste
 
 # BST
 
-```f#
+```fsharp
 type BST<'a> =
   | Empty
   | Node of BST<'a> * 'a * BST<'a>
@@ -93,7 +93,7 @@ Resultatet er to separate træer, der deler en stor del af deres data (noderne 1
 
 ### Set
 
-```f#
+```fsharp
 type Set<'a,'b>
 ```
 
@@ -115,7 +115,7 @@ For at et `Set` kan fungere effektivt, kræver det, at elementerne kan sammenlig
 
 ### Set creation
 
-```f#
+```fsharp
 let s1 = set [1;2;3;4;5]
 let s1' = Set.add 6 s1
 let s1'' = Set.remove 3 s1
@@ -138,7 +138,7 @@ Alle disse funktioner er rene og har ingen side-effekter, hvilket er kernen i fu
 
 ### Other set functions
 
-```f#
+```fsharp
 let first = set [1; 2]
 let second = set [3; 4]
 let third = set [1; 4]
@@ -167,7 +167,7 @@ Og ligesom lister, understøtter `Set` også de velkendte højere-ordens funktio
 
 ### Map
 
-```f#
+```fsharp
 type Map<'a,'b>
 ```
 
@@ -188,7 +188,7 @@ Og ligesom `Set` kræver `Map`, at nøglerne kan sammenlignes, fordi den internt
 
 ### Map functions
 
-```f#
+```fsharp
 let m1 = Map.ofList [("k1", 1); ("k2", 2); ("k3", 3), ("k4", 4)]
 let m2 = Map.add "k5" 5 m1
 let m3 = Map.remove "k1" m1
@@ -214,7 +214,7 @@ Igen, den oprindelige map `m1` forbliver fuldstændig uændret gennem disse oper
 - Possibly infinite
 - Can be initiated with a `int -> 'a` function
 
-```f#
+```fsharp
 let x = Seq.initInfinite (fun i -> i)
 ```
 
@@ -230,7 +230,7 @@ Dette gør det muligt at repræsentere potentielt *uendelige* datastrukturer. He
 
 ### Sequence
 
-```f#
+```fsharp
 let e5 = Seq.item 5 x
 ```
 
@@ -247,7 +247,7 @@ En vigtig detalje ved almindelige sekvenser er, at de som udgangspunkt genberegn
 
 ### Sequence caching
 
-```f#
+```fsharp
 let cachedX = Seq.cache x
 let e5 = Seq.item 5 cachedX
 ```

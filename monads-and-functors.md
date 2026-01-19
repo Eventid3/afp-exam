@@ -20,7 +20,7 @@ style: |
 - The structure is kept
 - Typically called a 'map' function:
 
-```f#
+```fsharp
 List.map: ('a -> 'b) -> list<'a> -> list<'b>
 ```
 
@@ -40,7 +40,7 @@ Andre eksempler er `Option.map`, `Array.map`, og `Async.map`. De er alle funktor
 
 - Using the identity function should results in the same data
 
-```f#
+```fsharp
 List.map (fun i -> i) [1; 2; 3;]
 // [1; 2; 3;]
 ```
@@ -59,7 +59,7 @@ Som vi ser her, at mappe `[1; 2; 3]` med `fun i -> i` giver os `[1; 2; 3]` tilba
 
 - A sequence of mapper functions should give the same result as function composition
 
-```f#
+```fsharp
 let f x = x * 2
 let g x = x + 1
 [1;2;3;] |> List.map f |> List.map g
@@ -85,7 +85,7 @@ Denne lov garanterer, at vi kan optimere vores `map`-operationer ved at kombiner
 - Exists to avoid imperative style programming
 - Must implement return and bind functions
 
-```f#
+```fsharp
 val return': 'a -> M<'a>
 val bind: ('a -> M<'b>) -> M<'a> -> M<'b>
 ```
@@ -107,7 +107,7 @@ En type skal implementere to funktioner for at være en monade: `return` og `bin
 Return is just implemented as a type constructor
 The Option type is a monad
 
-```f#
+```fsharp
 let x = Some 1
 let y = None
 ```
@@ -124,7 +124,7 @@ Det er vores måde at løfte en normal værdi op i den monadiske verden.
 
 ### Monads - bind
 
-```f#
+```fsharp
 // Option.bind
 let bind f x =
     match x with
@@ -155,7 +155,7 @@ For `Option.bind`:
 
 ### Monads - the problem
 
-```f#
+```fsharp
 // code that might fail
 let divide x y =
     if y = 0 then None else Some(x / y)
@@ -183,7 +183,7 @@ Vi vil lave en beregning, der involverer to divisioner efter hinanden. Den imper
 
 ### Monads - the monadic solution
 
-```f#
+```fsharp
 // code that might fail
 let divide x y =
     if y = 0 then None else Some(x / y)

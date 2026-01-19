@@ -39,7 +39,7 @@ Identitetselementet er en speciel værdi, der ikke ændrer den anden værdi, nå
 
 ### Monoids - laws
 
-```f#
+```fsharp
 // associativity
 (a ⊕ b) ⊕ c = a ⊕ (b ⊕ c)
 
@@ -60,7 +60,7 @@ For at noget kan kaldes en monoid, skal det overholde to simple love. Lad os bru
 
 ### Monoids - example
 
-```f#
+```fsharp
 let append = (@)
 let empty = []
 
@@ -89,7 +89,7 @@ Så, `(list<'a>, @, [])` danner en monoid.
 
 ### Monoids in practice
 
-```f#
+```fsharp
 // all returns list<User>
 let results = [
     fetchFromDB()
@@ -132,7 +132,7 @@ Dette er tæt beslægtet med principper fra Domain-Driven Design (DDD), hvor må
 
 ### Email example
 
-```f#
+```fsharp
 // bad
 type EmailAddress = string
 
@@ -159,7 +159,7 @@ Denne funktion indeholder vores valideringslogik. Den returnerer en `EmailAddres
 
 ### Descriminated Unions
 
-```f#
+```fsharp
 type PaymentStatus =
     | Unpaid
     | PartiallyPaid of amountPaid: decimal
@@ -189,7 +189,7 @@ Når vi bruger pattern matching, tvinger compileren os til at håndtere alle mul
 
 ### Single Case Unions
 
-```f#
+```fsharp
 type CustomerId = CustomerId of int
 type OrderId = OrderId of int
 type ProductId = ProductId of int
@@ -213,7 +213,7 @@ Ved at pakke dem ind i deres egne typer, forhindrer vi fejl, hvor vi ved et uhel
 
 ### Active Patterns
 
-```f#
+```fsharp
 let (|Even|Odd|) (num: int) =
     if (num % 2 = 0) then
         Even

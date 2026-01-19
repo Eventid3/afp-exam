@@ -21,8 +21,9 @@ style: |
 - `rec` keyword
 - `match` keyword
   - `function` keyword alternative
-  <!-- 
-  Rekursive funktioner er en fundamental del af funktionel programmering. I stedet for at bruge løkker, som vi kender det fra imperativ programmering, bruger vi rekursion til at iterere over datastrukturer.
+
+<!--
+Rekursive funktioner er en fundamental del af funktionel programmering. I stedet for at bruge løkker, som vi kender det fra imperativ programmering, bruger vi rekursion til at iterere over datastrukturer.
 
 I F# bruger vi `rec` nøgleordet til at definere en rekursiv funktion.
 
@@ -33,7 +34,7 @@ I F# bruger vi `rec` nøgleordet til at definere en rekursiv funktion.
 
 ### Recursive functions - example
 
-```f#
+```fsharp
 let rec length lst =
       match lst with
       | [] -> 0
@@ -56,7 +57,7 @@ Vi bruger `match` til at håndtere to cases:
 
 ### Recursive functions - example
 
-```f#
+```fsharp
 let rec length = function
   | [] -> 0
   | _ :: tail -> 1 + length tail
@@ -80,7 +81,8 @@ Tail recursion
 
 - No new stack frame created
 - Memory usage
-<!-- 
+
+<!--
 En vigtig optimering for rekursive funktioner er tail recursion, eller halerekursion.
 
 Normalt, når en funktion kalder sig selv, bliver der oprettet en ny stack frame for hvert kald. Det kan føre til et "stack overflow", hvis rekursionen er for dyb.
@@ -98,7 +100,8 @@ Når en funktion er halerekursiv, kan compileren optimere den, så den ikke brug
 - FsCheck: generate random test cases
 - Example property: `reverse (reverse xs) = xs`
 - Nice for testing `rec` functions
-<!-- 
+
+<!--
 Nu skal vi se på, hvordan vi kan teste vores rekursive funktioner. Traditionel testning involverer at skrive specifikke eksempler. Property-based testing er en anden tilgang.
 
 I stedet for at teste for specifikke input og output, tester vi for generelle _egenskaber_ (properties), som vores funktioner skal overholde for _alle_ mulige inputs.
@@ -114,7 +117,7 @@ Dette er en meget kraftfuld måde at teste rekursive funktioner på, da de ofte 
 
 ### Property based testing - the wrong way
 
-```f#
+```fsharp
 [<Test>]
 let ``length of append - manual examples`` () =
     Assert.AreEqual(5, length ([1;2] @ [3;4;5]))
@@ -135,7 +138,7 @@ Problemet er: hvor mange eksempler skal vi skrive for at være sikre på, at vor
 
 ### Property based testing - the right way
 
-```f#
+```fsharp
 [<Property>]
 let ``length of append`` (xs: int list) (ys: int list) =
     length (xs @ ys) = length xs + length ys
@@ -155,7 +158,7 @@ Hvis FsCheck finder et modeksempel, vil den rapportere det til os, og endda fors
 
 ### Property based testing - more examples
 
-```f#
+```fsharp
 [<Property>]
 let ``reverse twice is identity`` (xs: int list) =
     reverse (reverse xs) = xs

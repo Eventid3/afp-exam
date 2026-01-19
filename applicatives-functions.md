@@ -33,7 +33,7 @@ Vi kan definere funktioner inde i andre funktioner, og vi kan koble dem sammen e
 
 ### Functions - lower order
 
-```f#
+```fsharp
 let square x = x * x
 let isEven x = x % 2 = 0
 
@@ -51,7 +51,7 @@ Her er de mest basale funktioner. De kaldes "lower-order" fordi de kun opererer 
 
 ### Functions - higher order
 
-```f#
+```fsharp
 let applyTwice f a = f (f a)
 
 let multiplyBy n = fun x -> x * n
@@ -73,7 +73,7 @@ Ved at kalde `multiplyBy 2` skaber vi en ny funktion, `double`, som er specialis
 
 ### Functions - inner functions
 
-```f#
+```fsharp
 let calculateDiscount price =
     let applyDiscount discount = price * (1.0 - discount)
     if price > 100.0 then applyDiscount 0.2
@@ -94,7 +94,7 @@ Dette gør koden mere modulær og læsbar.
 
 ### Functions - Composition
 
-```f#
+```fsharp
 let addOne x = x + 1
 let double x = x * 2
 
@@ -114,7 +114,7 @@ Det er en meget deklarativ måde at udtrykke en sekvens af datatransformationer 
 
 ### Functions - Pipe
 
-```f#
+```fsharp
 // Using |> operator (left to right)
 let result =
     [1;2;3;4;5;6]
@@ -156,7 +156,7 @@ For at en type kan være en applicative, skal den have to funktioner:
 
 ### Applicatives - The problem
 
-```f#
+```fsharp
 let add a b = a + b
 
 let x = Some 3
@@ -178,7 +178,7 @@ Vi kunne bruge `Option.map`, men `map` virker kun på funktioner, der tager ét 
 
 ### Applicatives - The solution
 
-```f#
+```fsharp
 let apply fOpt xOpt =
     match fOpt, xOpt with
     | Some f, Some x -> Some (f x)
