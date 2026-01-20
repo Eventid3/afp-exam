@@ -11,7 +11,7 @@ style: |
 ---
 
 # AKKA
-<!-- Emne: Akka.NET - et framework til at bygge samtidige og distribuerede systemer vha. aktør-modellen. -->
+
 ---
 
 ### What is AKKA?
@@ -21,11 +21,13 @@ style: |
   - Actor
   - Messages
 - Designed for building concurrent, distributed systems
+
 <!--
 - Akka.NET er et 'actor model' framework.
 - Centrale byggeklodser: Aktører og Beskeder.
 - Formål: Simplificere udviklingen af samtidige og distribuerede systemer. Abstraherer tråde, låse, netværk væk.
--->
+  -->
+
 ---
 
 ### What is an actor?
@@ -35,15 +37,26 @@ style: |
   - Pairs well with functional paradigm and F#
 - Exists within an actor system
 - Actors within the system can send messages to each other
-  - Fire and forget
-  - Send and wait for response
+  - Fire and forget | Tell (`<!`):
+
+  ```fsharp
+  greeter <! "Hello World"
+  ```
+
+  - Send and wait for response | Ask `(<?)`:
+
+  ```fsharp
+  let response = target <? msg |> Async.RunSynchronously
+  ```
+
 <!--
 - En aktør er en enhed, der modtager og sender beskeder.
-- Egen, privat tilstand. Interaktion kun via beskeder (undgår race conditions).
+- Har sin egen mailbox, handler 1 besked ad gangen - threadsafe
 - Beskeder er typisk immutable. Passer godt til F#.
 - Lever i et 'Actor System'.
 - Kommunikation: "Fire-and-forget" (`Tell`) eller request-response (`Ask`).
--->
+  -->
+
 ---
 
 ### Actor Lifecycle
@@ -61,12 +74,14 @@ override x.PreStart() =
 override x.PostStop() =
     printfn "Actor stopped"
 ```
+
 <!--
 - Veldefineret livscyklus med hooks, man kan override:
 - `PreStart`: Til initialisering, før første besked.
 - `PostStop`: Til oprydning, efter aktøren er stoppet.
 - `PreRestart`/`PostRestart`: Bruges ifm. fejlhåndtering og genstart.
 -->
+
 ---
 
 ### Creation of actor system and actor
@@ -87,13 +102,20 @@ let greeterActor (mailbox: Actor<string>) =
 // Spawn actor
 let greeter =
     spawn system "greeter" greeterActor
+
+let greeter2 = spawn system "greeter" (actorOf (fun msg -> printfn "Hello, %s!" msg))
 ```
+
 <!--
 - Trin 1: Opret et `ActorSystem` (en container for aktører).
 - Trin 2: Definer aktørens opførsel (en funktion der tager en `mailbox`).
 - Logik: Typisk en rekursiv `loop` med et `actor { ... }` computation expression.
+- Note: () er for at loop bliver en funktion
+- Note: let! modtager async fra mailbox og binder til msg
 - Trin 3: "Spawn" aktøren ind i systemet med et navn og en opførsels-funktion. `spawn` returnerer en `IActorRef`.
+- Note, actorOf wrapper selv functionen
 -->
+
 ---
 
 ### Messages
@@ -107,18 +129,19 @@ let greeter =
 type CounterMsg =
     | Increment
     | Decrement
-    | GetCount of AsyncReplyChannel<int>
+    | GetCount
 
 type PersonMsg = {
     Name: string
     Age: int
 }
 ```
+
 <!--
 - Beskeder bør være veldefinerede typer (Records, Discriminated Unions).
 - DUs er ideelle til at definere en aktørs kommandoer.
-- `AsyncReplyChannel`: Bruges til "ask"-mønsteret. En kanal til at sende svar tilbage til afsenderen.
 -->
+
 ---
 
 ### Message Handling Example
@@ -130,41 +153,41 @@ let counterActor (mailbox: Actor<CounterMsg>) =
         match msg with
         | Increment -> return! loop (count + 1)
         | Decrement -> return! loop (count - 1)
-        | GetCount channel ->
-            channel.Reply(count)
+        | GetCount ->
+            mailbox.Context.Sender <! count
             return! loop count
     }
     loop 0
 ```
+
 <!--
-- Tilstand (`count`) håndteres funktionelt som parameter i den rekursive `loop`. Tilstanden er 100% privat.
+- (`count`) håndteres funktionelt som parameter i den rekursive `loop`. Tilstanden er 100% privat.
 - I `actor`-blokken: Modtag besked, pattern match, og kald `loop` rekursivt med ny tilstand.
-- `GetCount`: Sender svar tilbage via den medfølgende `channel`.
+- `GetCount`: Sender svar tilbage via den mailbox sender.
 -->
+
 ---
 
 ### Actor communication
 
 - **IActorRef**: Reference to an actor for sending messages
-- **Tell (<!)**: Fire and forget messaging
-- **Ask (<?)**: Request-response pattern
-- Each actor has a mailbox that queues incoming messages
-- Messages processed sequentially per actor
-- Parent-child actors can communicate directly
+- **mailbox**: Communication to Sender, Children or Parent
 
 ```fsharp
-// Fire and forget
-greeter <! "Hello World"
-
-// Request-response
-let! response = greeter <? GetValue
+let inputActor (target: IActorRef) (mailbox: Actor<string>) msg =
+    match msg with
+    | "i" -> target <! Increment
+    | "d" -> target <! Decrement
+    | _ ->
+        let response: int = target <? GetCount |> Async.RunSynchronously
+        printfn "Current count: %i" response
 ```
+
 <!--
 - Kommunikation via `IActorRef` (en letvægts-reference/adresse).
-- `Tell` (`<!`): Fire-and-forget. Asynkront, intet svar.
-- `Ask` (`<?`): Request-response. Returnerer en `Async<T>`, der kan ventes på.
-- Mailbox: Hver aktør har en kø. Beskeder behandles én ad gangen, hvilket garanterer trådsikkerhed for tilstanden.
+- mailbox - adgang til hierakiet og senderen
 -->
+
 ---
 
 ### Actor Hierarchy
@@ -177,33 +200,14 @@ let! response = greeter <? GetValue
   - **Stop**: Terminate actor
   - **Escalate**: Pass failure to grandparent
   - **Resume**: Continue with current state
+
 <!--
 - Aktører er organiseret i et træ-hierarki.
 - Forældre-aktører overvåger (supervises) deres børn.
 - Hvis et barn crasher (kaster exception), beslutter forælderen, hvad der skal ske (en "supervision strategy").
 - Strategier: `Restart` (standard), `Stop`, `Escalate` (send opad), `Resume`.
 -->
----
 
-### Supervision Example
-
-```fsharp
-let supervisor (mailbox: Actor<'a>) =
-    let strategy = Strategy.OneForOne(fun ex ->
-        match ex with
-        | :? DivideByZeroException ->
-            Directive.Restart
-        | _ -> Directive.Escalate
-    )
-    mailbox.Context.SetSupervisorStrategy(strategy)
-    // ... actor logic
-```
-<!--
-- Eksempel på en `supervisor` strategi.
-- `Strategy.OneForOne`: Gælder kun for det barn, der fejlede.
-- Logik: Match på exception type og returner en `Directive`.
-- "Lad det crashe": Centralt princip. Fejl håndteres på et højere niveau, ikke defensivt i hver funktion.
--->
 ---
 
 ### Actor Hierarchy Benefits
@@ -219,18 +223,21 @@ let supervisor (mailbox: Actor<'a>) =
     /worker1
     /worker2
 ```
+
 <!--
 - **Fejlisolering:** Fejl i ét sub-træ påvirker ikke resten af systemet.
 - **Robusthed:** Systemet kan "helbrede" sig selv ved at genstarte dele.
 - **Ansvarsfordeling:** Hierarkiet kan afspejle systemets ansvarsområder.
 - **Location Transparency:** Aktører refereres via sti (`/user/..`), uafhængigt af om de er lokale eller på en anden maskine.
 -->
+
 ---
 
 ### Actor Selection
 
 - Find actors by path instead of direct reference
 - Useful for dynamic actor discovery
+
 ```fsharp
 // Absolute path
 let actor =
@@ -242,34 +249,13 @@ let child =
 let workers =
     system.ActorSelection("/user/supervisor/*")
 ```
+
 <!--
 - "Actor Selection": Find en aktør via dens sti, hvis man ikke har en `IActorRef`.
 - Nyttigt til at kommunikere med aktører, man ikke selv har skabt.
 - Stier kan være absolutte, relative eller bruge wildcards (`*`).
 -->
----
 
-### Complete Example
-
-```fsharp
-type WorkerMsg = Process of string
-
-let workerActor (mailbox: Actor<WorkerMsg>) =
-    let rec loop() = actor {
-        let! Process data = mailbox.Receive()
-        printfn "Processing: %s" data
-        return! loop()
-    }
-    loop()
-
-let system = ActorSystem.Create("Demo")
-let worker = spawn system "worker" workerActor
-worker <! Process "task1"
-```
-<!--
-- "Hello world" eksempel, der viser den grundlæggende skabelon:
-- Definer besked -> Definer aktør-opførsel -> Opret system -> Spawn aktør -> Send besked.
--->
 ---
 
 ### Key Benefits of AKKA
@@ -279,9 +265,12 @@ worker <! Process "task1"
 - Location transparency (local/remote actors)
 - Scales easily to distributed systems
 - Functional programming friendly
+
 <!--
 - Samtidighed uden låse/delt tilstand.
 - Indbygget fejl-tolerance via supervision.
 - Location transparency (nem skalering til distribueret system).
 - Passer perfekt til FP-paradigmet (immutable beskeder etc.).
--->
+  -->
+
+---

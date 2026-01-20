@@ -11,7 +11,9 @@ style: |
 ---
 
 # Monads and Functors
-<!-- Emne: Funktorer og Monader - designmønstre til at arbejde med "indpakkede" værdier (f.eks. List, Option). -->
+
+## <!-- Emne: Funktorer og Monader - designmønstre til at arbejde med "indpakkede" værdier (f.eks. List, Option). -->
+
 ---
 
 ### Functors
@@ -23,12 +25,14 @@ style: |
 ```fsharp
 List.map: ('a -> 'b) -> list<'a> -> list<'b>
 ```
+
 <!--
 - Funktor: En type, der understøtter en `map`-operation.
 - `map`: Anvender en funktion på værdier *indeni* en struktur (kontekst).
 - Strukturen bevares: En liste med 5 elementer forbliver en liste med 5 elementer.
 - Eksempler: `List.map`, `Option.map`, `Array.map`.
 -->
+
 ---
 
 ### Functor laws
@@ -39,11 +43,13 @@ List.map: ('a -> 'b) -> list<'a> -> list<'b>
 List.map (fun i -> i) [1; 2; 3;]
 // [1; 2; 3;]
 ```
+
 <!--
 - En "rigtig" funktor skal overholde to love.
 - **Identitetsloven**: `map` med identitetsfunktionen (`fun x -> x`) må ikke ændre data.
 - Garanti: `map` gør *kun* det at anvende den givne funktion.
 -->
+
 ---
 
 ### Functor laws
@@ -58,10 +64,12 @@ let g x = x + 1
 [1;2;3;] |> List.map (f >> g)
 // val it: int list = [3; 5; 7]
 ```
+
 <!--
 - **Kompositionsloven**: At `map`'e med `f` og derefter `g` er det samme som at `map`'e med `f >> g`.
 - Garanti: Sikrer, at `map`-operationer kan optimeres ved at blive slået sammen.
 -->
+
 ---
 
 ### Monads
@@ -75,12 +83,14 @@ let g x = x + 1
 val return': 'a -> M<'a>
 val bind: ('a -> M<'b>) -> M<'a> -> M<'b>
 ```
+
 <!--
 - Monade: Et mere kraftfuldt designmønster for indpakkede værdier.
 - Formål: At sekventere/kæde beregninger sammen på en elegant, funktionel måde.
 - `bind`: Tager en funktion `a -> M<b>` (en funktion der selv returnerer en indpakket værdi).
 - Skal implementere to funktioner: `return` (løfter en værdi) og `bind` (kæder operationer).
 -->
+
 ---
 
 ### Monads - return
@@ -92,11 +102,13 @@ The Option type is a monad
 let x = Some 1
 let y = None
 ```
+
 <!--
 - `return` (også kaldet `pure`): Tager en normal værdi og pakker den ind i monade-konteksten.
 - Løfter en værdi op i den monadiske verden.
 - For `Option`-monaden er `return` lig med `Some`-konstruktøren.
 -->
+
 ---
 
 ### Monads - bind
@@ -113,6 +125,7 @@ bind (fun v -> Some (v+1)) (Some 4)
 bind (fun v -> Some (v+1)) (None)
 // val it: int option = None
 ```
+
 <!--
 - `bind`: Hjertet i monaden, kæder operationer sammen.
 - Input: En funktion `f` og en indpakket værdi `x`.
@@ -121,6 +134,7 @@ bind (fun v -> Some (v+1)) (None)
     - Ved `Some v`: Kalder `f` med `v`.
     - Ved `None`: Returnerer `None` direkte (short-circuit). Perfekt til fejlhåndtering.
 -->
+
 ---
 
 ### Monads - the problem
@@ -142,11 +156,13 @@ let compute a b c =
 compute 100 5 2  // Some 10
 compute 100 0 2  // None
 ```
+
 <!--
 - Problem: At kæde flere operationer, der kan fejle (returnere `Option`), sammen.
 - Imperativ stil: Fører til indlejrede `match`-udtryk.
 - "Pyramid of Doom": Koden bliver grim, svær at læse og vedligeholde.
 -->
+
 ---
 
 ### Monads - the monadic solution
@@ -164,6 +180,7 @@ let compute a b c =
 compute 100 5 2  // Some 10
 compute 100 0 2  // None
 ```
+
 <!--
 - Løsning: Brug `bind` til at skabe en flad, deklarativ pipeline.
 - `bind` abstraherer `match`-logikken væk.
@@ -171,3 +188,5 @@ compute 100 0 2  // None
 - Lader os fokusere på "happy path".
 - F# `computation expressions` (f.eks. `option { ... }`) er syntaktisk sukker for dette mønster.
 -->
+
+---

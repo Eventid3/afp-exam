@@ -10,6 +10,8 @@ slide:
 	npx @marp-team/marp-cli@latest -w $(file) --allow-local-files -o ./slides/$(htmlname) & brave ~/uni/6_semester/afp/slides/$(htmlname)
 
 all: $(HTML_FILES)
+	@mkdir -p slides/img
+	@cp img/* slides/img/
 
 slides/%.html: %.md
 	@mkdir -p slides

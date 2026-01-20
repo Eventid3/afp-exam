@@ -11,7 +11,7 @@ style: |
 ---
 
 # Reactive Programming
-<!-- Emne: Reaktiv Programmering (RP). Håndtering af asynkrone hændelses-strømme på en funktionel måde. -->
+
 ---
 
 ### What is Reactive Programming?
@@ -21,12 +21,14 @@ style: |
 - Declarative programming paradigm
 - Treating event streams as first-class values
 - Composing and transforming data over time
+
 <!--
 - Kernen i RP: Programmering med asynkrone datastrømme (events).
 - Bygger på: Observer-mønsteret.
-- Paradigme: Deklarativt (beskriv *hvad*, ikke *hvordan*).
+- Paradigme: Deklarativt (beskriv _hvad_, ikke _hvordan_).
 - Princip: Behandler hændelses-strømme som værdier (lister, etc.), der kan komponeres og transformeres.
 -->
+
 ---
 
 ### Why Reactive Programming?
@@ -38,12 +40,14 @@ style: |
 - In F#, we want to handle this functionally idiomatic
   - No side effects and with pure functions
 - Better composition and error handling than callbacks
+
 <!--
 - Problem: Asynkrone data er overalt (UI, netværk).
 - Udfordring: Traditionel event-håndtering (callbacks) bliver hurtigt kompleks ("callback hell").
 - Mål i F#: Håndter asynkroni funktionelt, uden side-effekter.
 - Fordele: Bedre komposition, fejlhåndtering og læsbarhed end callbacks.
 -->
+
 ---
 
 ### Events and observables
@@ -54,6 +58,7 @@ let timer = new System.Timers.Timer(1000)
 timer.Elapsed.Add someHandler
 // ...
 ```
+
 ```fsharp
 let createTimerAndObservable tickrate =
     let timer = new System.Timers.Timer(float tickrate)
@@ -67,11 +72,13 @@ let createTimerAndObservable tickrate =
         }
     task, observable
 ```
+
 <!--
 - Traditionel .NET: Imperativ, side-effekt baseret event-håndtering med `event.Add`.
 - Reaktiv tilgang: Abstraherer hændelser til en 'observable'.
 - Observable: Repræsenterer en strøm af fremtidige hændelser.
 -->
+
 ---
 
 ### IObservable<'T> Interface
@@ -90,6 +97,7 @@ type IObserver<'T> =
     abstract OnError: exn -> unit
     abstract OnCompleted: unit -> unit
 ```
+
 <!--
 - `IObservable<'T>`: Produceren. Repræsenterer strømmen. Har kun `Subscribe` metode.
 - `IObserver<'T>`: Forbrugeren. Lytter til strømmen. Har tre metoder:
@@ -98,6 +106,7 @@ type IObserver<'T> =
     - `OnCompleted`: Når strømmen slutter.
 - Model: "Push"-baseret. Producer skubber data til forbruger. Modsat "pull" i `IEnumerable`.
 -->
+
 ---
 
 ### Simple setup
@@ -118,17 +127,20 @@ timer.Start()
 subscription.Dispose()
 timer.Stop()
 ```
+
 <!--
 - Oprettelse: Konverter .NET event til observable.
 - Abonnement: Kald `Subscribe` med en funktion (en simpel observer).
 - Oprydning: `Subscribe` returnerer et `IDisposable` (abonnementet). Kald `Dispose()` for at afmelde og stoppe med at lytte.
 -->
+
 ---
 
-### Observable Module in F#
+### Observable Module in F
 
 - F# provides Observable module for functional operations
 - Transform streams like collections
+
 ```fsharp
 open System
 
@@ -144,11 +156,13 @@ Observable.merge observable1 observable2
 // Take first N events
 Observable.take 5
 ```
+
 <!--
 - `Observable` modul: Tilbyder funktionelle operatorer til at manipulere strømme.
 - Velkendte funktioner: `filter`, `map`, `merge`, `take` etc., ligesom på lister.
 - Gør det muligt at bygge deklarative pipelines for hændelser.
 -->
+
 ---
 
 ### Practical Example: Mouse Clicks
@@ -162,20 +176,24 @@ clicks
 |> Observable.add (fun count ->
     printfn "Clicked %d times" count)
 ```
+
 - This counts clicks functionally without mutable state
+
 <!--
 - Udfordring: Tæl klik uden mutabel tilstand.
 - Pipeline:
-    1. `map` hvert klik til `1`.
-    2. `scan` (akkumuler) summen. `scan` er som `fold`, men udsender hver mellemværdi.
-    3. `add` (subscribe) for at udføre side-effekt (print).
+  1. `map` hvert klik til `1`.
+  2. `scan` (akkumuler) summen. `scan` er som `fold`, men udsender hver mellemværdi.
+  3. `add` (subscribe) for at udføre side-effekt (print).
 - Resultat: Ren, funktionel og deklarativ løsning.
--->
+  -->
+
 ---
 
 ### Complexity with event piping
 
 - Problem: Multiple event sources, filtering, throttling
+
 ```fsharp
 // Without reactive: messy, stateful
 let mutable lastClick = DateTime.MinValue
@@ -185,12 +203,15 @@ let clickHandler _ =
         lastClick <- now
         // handle click
 ```
+
 - Requires manual state management and timing logic
+
 <!--
 - Komplekst scenarie: "Throttling" (ignorer klik, der kommer for hurtigt).
 - Imperativ løsning: Kræver manuel, mutabel tilstand (`lastClick`) og if/else logik.
 - Bliver hurtigt komplekst og fejlbehæftet.
--->
+  -->
+
 ---
 
 ### Reactive Solution
@@ -201,12 +222,15 @@ button.Click
 |> Observable.throttle (TimeSpan.FromMilliseconds(300))
 |> Observable.add (printfn "Clicked!")
 ```
+
 - Clean, functional, and self-documenting
+
 <!--
 - Reaktiv løsning: Brug `throttle` operatoren.
 - Pipelinen er simpel, deklarativ og selv-dokumenterende.
 - "Tag klik, begræns dem til max én hver 300ms, og reager så".
 -->
+
 ---
 
 ### Complex Scenario: Autocomplete
@@ -221,6 +245,7 @@ textBox.TextChanged
 |> Observable.switch
 |> Observable.add displayResults
 ```
+
 <!--
 - Autocomplete er et perfekt eksempel på styrken i RP.
 - Pipeline-forklaring:
@@ -233,6 +258,7 @@ textBox.TextChanged
     7. `add` for at vise resultater.
 - Umuligt at implementere elegant manuelt.
 -->
+
 ---
 
 ### Benefits of Reactive Approach
@@ -243,6 +269,7 @@ textBox.TextChanged
 - **Error handling**: Centralized with `Observable.catch`
 - **Cancellation**: Built-in with `IDisposable`
 - **Testable**: Pure functions, easy to mock
+
 <!--
 - **Deklarativt:** Lettere at læse og forstå intentionen.
 - **Komponerbart:** Byg komplekse systemer af simple operatorer.
@@ -251,17 +278,21 @@ textBox.TextChanged
 - **Annullering:** Indbygget, robust oprydning via `IDisposable`.
 - **Testbarhed:** Rene funktioner i pipelinen er lette at enhedsteste.
 -->
+
 ---
 
 ### Hot vs Cold Observables
 
 **Cold Observable**: Produces values on subscription
+
 - Each subscriber gets own sequence
 - Example: HTTP request observable
 
 **Hot Observable**: Produces values regardless of subscribers
+
 - All subscribers share same sequence
 - Example: Mouse moves, timer events
+
 ```fsharp
 // Cold: new timer per subscriber
 let cold = Observable.interval 1000
@@ -269,11 +300,13 @@ let cold = Observable.interval 1000
 let timer = new Timer(1000.0)
 let hot = timer.Elapsed
 ```
+
 <!--
 - **Kold Observable**: Starter først ved abonnement. Hver abonnent får sin egen private sekvens (f.eks. et HTTP-kald).
 - **Varm Observable**: Producerer værdier uafhængigt af abonnenter. Abonnenter deler den samme strøm (f.eks. muse-events).
 - Eksempel: `Observable.interval` er kold (ny timer pr. abonnent), `timer.Elapsed` er varm (deler én timer).
 -->
+
 ---
 
 ### Common Operators
@@ -290,6 +323,7 @@ Observable.merge stream1 stream2
 // Switch: Cancel previous, take latest
 Observable.switch
 ```
+
 <!--
 - `throttle`: Vent på pause i hændelser (godt til brugerinput).
 - `distinctUntilChanged`: Undgå unødvendigt arbejde.
@@ -297,6 +331,7 @@ Observable.switch
 - `merge`: Kombiner flere strømme til én.
 - `switch`: Essentiel til asynkrone opgaver for at undgå race conditions.
 -->
+
 ---
 
 ### Error Handling
@@ -309,32 +344,38 @@ observable
     Observable.empty)
 |> Observable.add processResult
 ```
+
 - Errors propagate through pipeline and can be handled gracefully
+
 <!--
 - Fejl (exceptions) i en pipeline crasher ikke programmet.
 - De bliver til en `OnError` notifikation, der sendes ned gennem pipelinen.
 - `catch`-operatoren fanger fejlen og lader os reagere, f.eks. ved at returnere en tom strøm (`Observable.empty`) eller en default-værdi.
 -->
+
 ---
 
 ### Reactive vs Async
 
 Both handle asynchrony, but different use cases:
 **Async**: Single future value
+
 ```fsharp
 let! result = downloadAsync url
 ```
+
 **Reactive**: Stream of values over time
+
 ```fsharp
 clicks |> Observable.add handler
 ```
+
 - Can combine them: `Observable.ofAsync` and `Async.AwaitObservable`
+
 <!--
-- `async`: Repræsenterer en *enkelt* fremtidig værdi (en asynkron `T`).
-- `observable`: Repræsenterer en *strøm* af mange værdier over tid (en asynkron `IEnumerable<T>`).
+- `async`: Repræsenterer en _enkelt_ fremtidig værdi (en asynkron `T`).
+- `observable`: Repræsenterer en _strøm_ af mange værdier over tid (en asynkron `IEnumerable<T>`).
 - De kan kombineres: Konverter mellem `async` og `observable` for at bruge det bedste værktøj til opgaven.
 -->
----
 
-### Questions?
-<!-- Spørgsmål? -->
+---

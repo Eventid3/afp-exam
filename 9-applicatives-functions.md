@@ -11,7 +11,7 @@ style: |
 ---
 
 # Applicatives and Functions
-<!-- Emne: Funktioner som "first-class citizens" i F# og designmønsteret 'Applicative Functors'. -->
+
 ---
 
 ### Functions - first class citizens
@@ -21,11 +21,13 @@ style: |
 - Can be chained together
   - Composition
   - Pipe operator
+
 <!--
 - "First-class citizens": Funktioner kan behandles som enhver anden værdi (int, string etc.).
 - Kan gemmes i variable, sendes som argumenter, og returneres fra andre funktioner.
 - Kan kædes sammen med komposition (`>>`) og pipe (`|>`).
 -->
+
 ---
 
 ### Functions - lower order
@@ -37,10 +39,12 @@ let isEven x = x % 2 = 0
 square 4        // 16
 isEven 7        // false
 ```
+
 <!--
 - Lower-order: Basale funktioner, der opererer på simple data (ikke på andre funktioner).
 - Fundamentale byggeklodser.
 -->
+
 ---
 
 ### Functions - higher order
@@ -52,12 +56,14 @@ let multiplyBy n = fun x -> x * n
 let double = multiplyBy 2
 double 5   // 10
 ```
+
 <!--
 - Higher-order: Funktioner, der tager funktioner som input eller returnerer en funktion.
 - `applyTwice`: Tager funktion `f` som argument.
 - `multiplyBy`: Returnerer en ny funktion. Dette kaldes en 'closure' - den husker værdien `n`.
 - Giver genbrugelig og konfigurerbar kode.
 -->
+
 ---
 
 ### Functions - inner functions
@@ -70,11 +76,13 @@ let calculateDiscount price =
 
 calculateDiscount 150.0  // 120.0
 ```
+
 <!--
 - Indre funktioner: Defineres inde i andre funktioner for at opdele logik.
 - Forurener ikke det ydre scope.
 - `applyDiscount` er en 'closure', da den "fanger" `price` fra den ydre funktion.
 -->
+
 ---
 
 ### Functions - Composition
@@ -86,11 +94,13 @@ let double x = x * 2
 let addOneThenDouble = addOne >> double
 addOneThenDouble 3  // 8
 ```
+
 <!--
 - Funktionskomposition (`>>`): Kobler to funktioner sammen til én ny funktion.
 - `f >> g`: Output fra `f` bliver automatisk input til `g`.
 - Deklarativ måde at udtrykke en sekvens af transformationer.
 -->
+
 ---
 
 ### Functions - Pipe
@@ -103,12 +113,14 @@ let result =
     |> List.map (fun x -> x * 2)           // [4;8;12;]
     |> List.map (fun x -> string x) // ["4"; "8"; "12";]
 ```
+
 <!--
 - Pipe-operator (`|>`): Sender en værdi gennem en pipeline af funktioner.
 - Værdien til venstre bliver det *sidste* argument til funktionen til højre.
 - Meget læsbart (top-til-bund). Undgår indlejrede kald.
 - God til at transformere en konkret datastrøm.
 -->
+
 ---
 
 ### Applicatives
@@ -116,14 +128,14 @@ let result =
 - Applies wrapped functions to wrapped values
 - Needs two functions
   - Pure
-  - Apply (<*>)
+  - Apply (<\*>)
+
 <!--
 - Applicative Functor: Designmønster for "indpakkede" værdier (`Option`, `List` etc.).
-- Unik egenskab: Anvender en *indpakket funktion* på en *indpakket værdi*.
-- Krav: Skal have to funktioner:
-    1. `pure`: Pakker en normal værdi ind (for `Option` er det `Some`).
-    2. `apply` (ofte `<*>`): Tager indpakket funktion og indpakket værdi, returnerer ny indpakket værdi.
+- Unik egenskab: Anvender en _indpakket funktion_ på en _indpakket værdi_.
+- Krav: Skal have to funktioner: 1. `pure`: Pakker en normal værdi ind (for `Option` er det `Some`). 2. `apply` (ofte `<*>`): Tager indpakket funktion og indpakket værdi, returnerer ny indpakket værdi.
 -->
+
 ---
 
 ### Applicatives - The problem
@@ -137,11 +149,13 @@ let y = Some 5
 // I can't do it captain, I don't have the power!
 // let result = add x y
 ```
+
 <!--
 - Problem: Hvordan anvender man en normal funktion med flere argumenter (f.eks. `add`) på indpakkede værdier (`Option`)?
 - `add x y` fejler, da den forventer `int`, ikke `int option`.
 - `Option.map` virker kun med funktioner, der tager ét argument.
 -->
+
 ---
 
 ### Applicatives - The solution
@@ -157,6 +171,7 @@ let result =
     |> apply <| x   // Some (add 3) = Some (fun y -> 3 + y)
     |> apply <| y   // Some 8
 ```
+
 <!--
 - Løsning: `apply`-funktionen.
 - Trin 1: Løft `add` funktionen ind i konteksten: `Some add`.
@@ -164,6 +179,7 @@ let result =
 - Trin 3: `apply` den anden værdi (`Some 5`). Resultatet er `Some 8`.
 - Hvis en værdi var `None`, ville `apply` kortslutte og returnere `None`.
 -->
+
 ---
 
 ### Applicatives - comparison to functors and monads
@@ -175,9 +191,12 @@ let result =
   - `Some ((+) 1) <*> Some 5  // Some 6`
 - Monads apply a function that returns a wrapped value, to a wrapped value
   - `Some 5 |> Option.bind (fun x -> Some (x + 1))  // Some 6`
+
 <!--
 - **Funktor (`map`):** (Normal funktion) -> (Indpakket værdi) -> (Indpakket værdi)
 - **Applicative (`<*>`):** (Indpakket funktion) -> (Indpakket værdi) -> (Indpakket værdi). Mere kraftfuld end `map`.
 - **Monade (`bind`):** (Funktion, der returnerer indpakket værdi) -> (Indpakket værdi) -> (Indpakket værdi). Mest kraftfuld, tillader dynamisk kædning.
 - Hierarki: Alle monader er applicatives, alle applicatives er funktorer.
 -->
+
+---

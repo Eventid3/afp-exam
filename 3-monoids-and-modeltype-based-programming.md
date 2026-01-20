@@ -11,7 +11,7 @@ style: |
 ---
 
 # Monoids and Model/type-based Programming
-<!-- Emne: Monoider og Type-baseret programmering. To koncepter, der giver sikker, robust og udtryksfuld kode. -->
+
 ---
 
 ### Monoids
@@ -19,14 +19,15 @@ style: |
 - Simple construct with the following definition
   - A type with an associative binary operation
   - and an identity element
-- Operation could be +, * or an append function
+- Operation could be +, \* or an append function
 - Identity element could be 0, an empty string or an empty list
-<!-- 
+<!--
 - Definition: En type med en binær, associativ operation og et identitetselement.
-- Eksempler (operation): +, *, append.
+- Eksempler (operation): +, \*, append.
 - Eksempler (identitet): 0, 1, "", [].
 - Identitetselementet ændrer ikke andre elementer ved operationen.
--->
+  -->
+
 ---
 
 ### Monoids - laws
@@ -39,11 +40,13 @@ style: |
 i ⊕ a = a
 a ⊕ i = a
 ```
+
 <!--
 - To love skal overholdes.
 - **Associativitet**: Operationsrækkefølgen er ligegyldig. `(a+b)+c = a+(b+c)`. Vigtigt for parallelisering.
 - **Identitet**: Kombination med identitetselementet `i` ændrer intet.
 -->
+
 ---
 
 ### Monoids - example
@@ -58,6 +61,7 @@ let empty = []
 [] @ [1; 2] = [1; 2]                    // left identity
 [1; 2] @ [] = [1; 2]                    // right identity
 ```
+
 <!--
 - Eksempel: F# lister.
 - Type: `list<'a>`.
@@ -65,6 +69,7 @@ let empty = []
 - Identitet: `[]` (tom liste).
 - Lovene for associativitet og identitet holder. Derfor danner lister en monoid.
 -->
+
 ---
 
 ### Monoids in practice
@@ -79,13 +84,15 @@ let results = [
 
 let allUsers = List.fold (@) [] results
 ```
+
 - Monoids helps us to so safe combining
 <!--
 - Praktisk anvendelse: Sikker kombination af data.
 - Eksempel: Samling af resultater (brugerlister) fra flere kilder (DB, cache, API).
 - `List.fold` med monoidens operation (`@`) og identitet (`[]`) kombinerer sikkert resultaterne.
 - Associativitet tillader parallelisering: resultater kan kombineres i vilkårlig rækkefølge.
--->
+  -->
+
 ---
 
 ### Model/type-based programming
@@ -94,12 +101,13 @@ let allUsers = List.fold (@) [] results
 - Make illegal states not happen
 - Encode domain rules in types
 - Domain Driven Design
-<!-- 
+<!--
 - Tilgang: Brug typesystemet til at modellere domænet præcist.
 - Mål: Gør ulovlige tilstande umulige at repræsentere i typerne.
 - Princip: Indkod forretningsregler direkte i typerne.
 - Relateret til: Domain-Driven Design (DDD).
--->
+  -->
+
 ---
 
 ### Email example
@@ -116,12 +124,14 @@ module EmailAddress =
         then Some (EmailAddress s)
         else None
 ```
+
 <!--
 - Dårlig praksis: `type EmailAddress = string`. Tillader ugyldige værdier ("hej", ""). Kræver validering overalt.
 - God praksis: Dedikeret `EmailAddress` type med privat konstruktør.
 - `create` funktion: Eneste måde at skabe en `EmailAddress`. Indeholder validering.
 - Garanti: En værdi af typen `EmailAddress` er *altid* gyldig. Reglen er indkodet i typen.
 -->
+
 ---
 
 ### Descriminated Unions
@@ -141,12 +151,14 @@ let getStatus payment =
     | FullyPaid date -> $"Completed on {date}"
     | Refunded (date, reason) -> $"Refunded: {reason}"
 ```
+
 <!--
 - Discriminated Unions (DUs): Definerer en type, der kan være én ud af flere faste tilstande.
 - Eksempel: `PaymentStatus`. En betaling kan kun være i én af disse tilstande.
 - Tilstande kan have associerede data (f.eks. `PartiallyPaid` har `amountPaid`).
 - Pattern matching: Compileren tvinger os til at håndtere alle tilstande, hvilket forhindrer fejl.
 -->
+
 ---
 
 ### Single Case Unions
@@ -162,12 +174,14 @@ let findOrder (OrderId id) = // ...
 // error!
 findCustomer (OrderId 123)
 ```
+
 <!--
 - Teknik: Brug en DU med én case til at "wrappe" en primitiv type (f.eks. `int`).
 - Formål: Giver semantisk betydning og typesikkerhed.
 - `CustomerId` og `OrderId` er forskellige typer, selvom de begge indeholder en `int`.
 - Forhindrer fejl: Compileren fanger forsøg på at blande forskellige ID-typer.
 -->
+
 ---
 
 ### Active Patterns
@@ -184,7 +198,9 @@ match 3 with
 | Odd -> printfn "3 is odd"
 // outputs: 3 is odd
 ```
+
 Source: AFP slides
+
 <!--
 - F# feature: Udvider pattern matching systemet.
 - Formål: Giver os mulighed for at navngive klassifikationer af inputdata.
@@ -192,6 +208,7 @@ Source: AFP slides
 - Anvendelse: Kan bruges direkte i `match`-udtryk, som var de DU-cases.
 - Gør koden mere læsbar og deklarativ.
 -->
+
 ---
 
 ### Conclusion
@@ -204,8 +221,11 @@ Source: AFP slides
   - Invalid states impossible
   - Readable domain models
   - Compiler enforced checks
-<!-- 
+
+<!--
 - Monoids: Garanterer sikker og forudsigelig sammensætning af data.
 - Type-baseret programmering: Håndhæver domæneregler i compileren, gør ugyldige tilstande umulige.
 - Sammen: Sikker datakomposition, læsbare domænemodeller og færre fejl pga. kompileringstjek.
--->
+  -->
+
+---
