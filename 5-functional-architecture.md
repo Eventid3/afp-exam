@@ -62,12 +62,12 @@ Outside World <-> Adapter <-> Port <-> Domain Logic
 
 ---
 
-### Example: Task Manager
+### Example: Todo Manager
 
 **Domain Model (Pure)**
 
 ```fsharp
-type Task = {
+type Todo = {
     Id: string
     Description: string
     Completed: bool
@@ -75,8 +75,8 @@ type Task = {
 ```
 
 <!--
-- Eksempel: En simpel task manager.
-- Domænemodel: En ren `Task` record, der kun indeholder data.
+- Eksempel: En simpel todo manager.
+- Domænemodel: En ren `Todo` record, der kun indeholder data.
 -->
 
 ---
@@ -84,13 +84,13 @@ type Task = {
 ### The Problem Without This Architecture
 
 ```fsharp
-let completeTask (task: Task) : Task =
-    let completed = { task with Completed = true }
+let completeTodo (todo: Todo) : Todo =
+    let completed = { todo with Completed = true }
 
     // Domain logic mixed with I/O!
     let json = JsonSerializer.Serialize(completed)
-    File.WriteAllText($"{task.Id}.json", json)
-    printfn "Task %s completed!" task.Id
+    File.WriteAllText($"{todo.Id}.json", json)
+    printfn "Todo %s completed!" todo.Id
 
     completed
 ```
@@ -103,7 +103,7 @@ let completeTask (task: Task) : Task =
 
 <!--
 - Anti-pattern: Blanding af domænelogik og I/O.
-- `completeTask` både ændrer status OG skriver til filsystem og konsol.
+- `completeTodo` både ændrer status OG skriver til filsystem og konsol.
 - **Problemer**: - Umulig at enhedsteste isoleret. - Logik kan ikke genbruges med en anden type lager (f.eks. database). - Ren logik er viklet sammen med uren I/O.
   -->
 
@@ -113,11 +113,11 @@ let completeTask (task: Task) : Task =
 
 ```fsharp
 // Output ports (domain -> outside)
-type SaveTask = Task -> unit
+type SaveTodo = Todo -> unit
 type NotifyUser = string -> unit
 
 // Input ports (outside -> domain)
-type LoadTasks = unit -> Task list
+type LoadTodos = unit -> Todo list
 ```
 
 **These are just type aliases - the domain's interface**
@@ -125,7 +125,7 @@ type LoadTasks = unit -> Task list
 <!--
 - Løsning: Definer porte som funktionstyper.
 - Domænet definerer de kontrakter, det har brug for, uden at specificere *hvordan*.
-- `SaveTask`: En funktion, der kan gemme en `Task`.
+- `SaveTodo`: En funktion, der kan gemme en `Todo`.
 - `NotifyUser`: En funktion, der kan vise en besked.
 -->
 
@@ -135,24 +135,24 @@ type LoadTasks = unit -> Task list
 
 ```fsharp
 // File system adapter
-let fileAdapter: SaveTask =
-    fun task ->
-        let json = JsonSerializer.Serialize(task)
-        File.WriteAllText($"{task.Id}.json", json)
+let fileAdapter: SaveTodo =
+    fun todo ->
+        let json = JsonSerializer.Serialize(todo)
+        File.WriteAllText($"{todo.Id}.json", json)
 
 // In-memory adapter (for testing)
-let inMemoryAdapter: SaveTask =
-    fun task ->
-        memoryStore.Add(task)
+let inMemoryAdapter: SaveTodo =
+    fun todo ->
+        memoryStore.Add(todo)
 ```
 
 **Same port type, different implementations**
 
 <!--
 - Adaptere: Konkrete implementationer af portene.
-- `fileAdapter`: Implementerer `SaveTask` ved at skrive til en JSON-fil.
-- `inMemoryAdapter`: Implementerer `SaveTask` ved at gemme i en liste (ideel til test).
-- Begge funktioner opfylder den samme `SaveTask` typesignatur.
+- `fileAdapter`: Implementerer `SaveTodo` ved at skrive til en JSON-fil.
+- `inMemoryAdapter`: Implementerer `SaveTodo` ved at gemme i en liste (ideel til test).
+- Begge funktioner opfylder den samme `SaveTodo` typesignatur.
 -->
 
 ---
@@ -160,24 +160,24 @@ let inMemoryAdapter: SaveTask =
 ### Domain Logic Uses Ports
 
 ```fsharp
-let completeTask (task: Task) =
-    {task with Completed = true}
+let completeTodo (todo: Todo) =
+    {todo with Completed = true}
 
-let addAndCompleteTask
-    (save: SaveTask)
+let addAndCompleteTodo
+    (save: SaveTodo)
     (notify: NotifyUser)
-    (task: Task) : unit =
+    (todo: Todo) : unit =
 
-    let completed = completeTask task
+    let completed = completeTodo todo
     save completed
-    notify $"Task {task.Id} completed!"
+    notify $"Todo {todo.Id} completed!"
 ```
 
 **Domain knows nothing about files, databases, or console**
 
 <!--
-- `completeTask` er nu 100% ren. Den tager en task og returnerer en ny. Let at teste.
-- `addAndCompleteTask` orkestrerer et workflow og tager sine afhængigheder (`save`, `notify`) som argumenter (dependency injection).
+- `completeTodo` er nu 100% ren. Den tager en todo og returnerer en ny. Let at teste.
+- `addAndCompleteTodo` orkestrerer et workflow og tager sine afhængigheder (`save`, `notify`) som argumenter (dependency injection).
 - Domænelogikken er helt uvidende om filer, databaser eller konsoller.
 -->
 
@@ -188,19 +188,19 @@ let addAndCompleteTask
 **1. Design ports first (types)**
 
 ```fsharp
-type SaveTask = Task -> unit
+type SaveTodo = Todo -> unit
 ```
 
 **2. Domain logic depends only on types**
 
 ```fsharp
-let addTask (save: SaveTask) = ...
+let addTodo (save: SaveTodo) = ...
 ```
 
 **3. Compiler ensures adapters match**
 
 ```fsharp
-let fileAdapter: SaveTask = ...  // must match!
+let fileAdapter: SaveTodo = ...  // must match!
 ```
 
 **Types drive the architecture**
@@ -220,15 +220,15 @@ let fileAdapter: SaveTask = ...  // must match!
 **Small, focused functions compose naturally**
 
 ```fsharp
-let save: SaveTask = fileAdapter
+let save: SaveTodo = fileAdapter
 let notify: NotifyUser = consoleAdapter
 
 let workflow =
-    createTask
-    >> validateTask
-    >> completeTask
-    >> (fun task -> save task; task)
-    >> (fun task -> notify "Done!"; task)
+    createTodo
+    >> validateTodo
+    >> completeTodo
+    >> (fun todo -> save todo; todo)
+    >> (fun todo -> notify "Done!"; todo)
 ```
 
 **Adapters are just functions - easy to compose**
