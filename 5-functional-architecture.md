@@ -87,7 +87,6 @@ type Todo = {
 let completeTodo (todo: Todo) : Todo =
     let completed = { todo with Completed = true }
 
-    // Domain logic mixed with I/O!
     let json = JsonSerializer.Serialize(completed)
     File.WriteAllText($"{todo.Id}.json", json)
     printfn "Todo %s completed!" todo.Id

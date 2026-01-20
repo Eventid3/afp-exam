@@ -24,8 +24,8 @@ style: |
 
 <!--
 - Akka.NET er et 'actor model' framework.
-- Centrale byggeklodser: Aktører og Beskeder.
-- Formål: Simplificere udviklingen af samtidige og distribuerede systemer. Abstraherer tråde, låse, netværk væk.
+- Centrale byggeklodser: actorer og Beskeder.
+- Formål: Simplificere udviklingen af concurrent og distributed systemer. Abstraherer threads, locks, netværk væk.
   -->
 
 ---
@@ -50,7 +50,7 @@ style: |
   ```
 
 <!--
-- En aktør er en enhed, der modtager og sender beskeder.
+- En actor er en enhed, der modtager og sender beskeder.
 - Har sin egen mailbox, handler 1 besked ad gangen - threadsafe
 - Beskeder er typisk immutable. Passer godt til F#.
 - Lever i et 'Actor System'.
@@ -78,7 +78,7 @@ override x.PostStop() =
 <!--
 - Veldefineret livscyklus med hooks, man kan override:
 - `PreStart`: Til initialisering, før første besked.
-- `PostStop`: Til oprydning, efter aktøren er stoppet.
+- `PostStop`: Til oprydning, efter actoren er stoppet.
 - `PreRestart`/`PostRestart`: Bruges ifm. fejlhåndtering og genstart.
 -->
 
@@ -107,12 +107,12 @@ let greeter2 = spawn system "greeter" (actorOf (fun msg -> printfn "Hello, %s!" 
 ```
 
 <!--
-- Trin 1: Opret et `ActorSystem` (en container for aktører).
-- Trin 2: Definer aktørens opførsel (en funktion der tager en `mailbox`).
+- Trin 1: Opret et `ActorSystem` (en container for actorer).
+- Trin 2: Definer actorens opførsel (en funktion der tager en `mailbox`).
 - Logik: Typisk en rekursiv `loop` med et `actor { ... }` computation expression.
 - Note: () er for at loop bliver en funktion
 - Note: let! modtager async fra mailbox og binder til msg
-- Trin 3: "Spawn" aktøren ind i systemet med et navn og en opførsels-funktion. `spawn` returnerer en `IActorRef`.
+- Trin 3: "Spawn" actoren ind i systemet med et navn og en opførsels-funktion. `spawn` returnerer en `IActorRef`.
 - Note, actorOf wrapper selv functionen
 -->
 
@@ -139,7 +139,7 @@ type PersonMsg = {
 
 <!--
 - Beskeder bør være veldefinerede typer (Records, Discriminated Unions).
-- DUs er ideelle til at definere en aktørs kommandoer.
+- DUs er ideelle til at definere en actors kommandoer.
 -->
 
 ---
@@ -202,8 +202,8 @@ let inputActor (target: IActorRef) (mailbox: Actor<string>) msg =
   - **Resume**: Continue with current state
 
 <!--
-- Aktører er organiseret i et træ-hierarki.
-- Forældre-aktører overvåger (supervises) deres børn.
+- actorer er organiseret i et træ-hierarki.
+- Forældre-actorer overvåger (supervises) deres børn.
 - Hvis et barn crasher (kaster exception), beslutter forælderen, hvad der skal ske (en "supervision strategy").
 - Strategier: `Restart` (standard), `Stop`, `Escalate` (send opad), `Resume`.
 -->
@@ -228,7 +228,7 @@ let inputActor (target: IActorRef) (mailbox: Actor<string>) msg =
 - **Fejlisolering:** Fejl i ét sub-træ påvirker ikke resten af systemet.
 - **Robusthed:** Systemet kan "helbrede" sig selv ved at genstarte dele.
 - **Ansvarsfordeling:** Hierarkiet kan afspejle systemets ansvarsområder.
-- **Location Transparency:** Aktører refereres via sti (`/user/..`), uafhængigt af om de er lokale eller på en anden maskine.
+- **Location Transparency:** actorer refereres via sti (`/user/..`), uafhængigt af om de er lokale eller på en anden maskine.
 -->
 
 ---
@@ -251,8 +251,8 @@ let workers =
 ```
 
 <!--
-- "Actor Selection": Find en aktør via dens sti, hvis man ikke har en `IActorRef`.
-- Nyttigt til at kommunikere med aktører, man ikke selv har skabt.
+- "Actor Selection": Find en actor via dens sti, hvis man ikke har en `IActorRef`.
+- Nyttigt til at kommunikere med actorer, man ikke selv har skabt.
 - Stier kan være absolutte, relative eller bruge wildcards (`*`).
 -->
 

@@ -56,7 +56,7 @@ module BST =
   val insert<'a>   : 'a   -> BST<'a> -> BST<'a>
 ```
 
-![height:200px](img/bst1.png)
+![height:400px](img/bst1.png)
 
 <!--
 - Eksempel: Binært søgetræ (BST) er en klassisk persistent datastruktur.
@@ -71,7 +71,7 @@ module BST =
 ![BST example](./img/bst2.png)
 
 <!--
-- Visualisering af `insert 7`.
+- Visualisering af `insert 11`.
 - Princip: Kun stien ned til ændringen kopieres. Resten af træet genbruges.
 - Grå noder: Genbrugt fra det oprindelige træ.
 - Sorte noder: Nye kopier, der danner den nye version af træet.
