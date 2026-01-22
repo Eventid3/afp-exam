@@ -23,10 +23,10 @@ style: |
 - Composing and transforming data over time
 
 <!--
-- Kernen i RP: Programmering med asynkrone datastrømme (events).
-- Bygger på: Observer-mønsteret.
-- Paradigme: Deklarativt (beskriv _hvad_, ikke _hvordan_).
-- Princip: Behandler hændelses-strømme som værdier (lister, etc.), der kan komponeres og transformeres.
+- Kernen i RP: Programmering med asynchronous data streams (events).
+- Bygger på: Observer pattern.
+- Paradigme: Declarative (beskriv _hvad_, ikke _hvordan_).
+- Princip: Behandler event streams som værdier (lister, etc.), der kan komponeres og transformeres.
 -->
 
 ---
@@ -42,22 +42,32 @@ style: |
 - Better composition and error handling than callbacks
 
 <!--
-- Problem: Asynkrone data er overalt (UI, netværk).
+- Problem: Asynchronous data er overalt (UI, netværk).
 - Udfordring: Traditionel event-håndtering (callbacks) bliver hurtigt kompleks ("callback hell").
-- Mål i F#: Håndter asynkroni funktionelt, uden side-effekter.
+- Mål i F#: Håndter asynchrony funktionelt, uden side effects.
 - Fordele: Bedre komposition, fejlhåndtering og læsbarhed end callbacks.
 -->
 
 ---
 
-### Events and observables
+### Events and observables - Traditional
 
 ```fsharp
 let someHandler _ = printfn "Handling event..."
 let timer = new System.Timers.Timer(1000)
 timer.Elapsed.Add someHandler
+timer.Start()
 // ...
 ```
+
+<!--
+- Traditionel .NET: Imperative, side effect baseret event-håndtering med `event.Add`.
+- Registrer callback til event
+-->
+
+---
+
+### Events and observables - Reactive
 
 ```fsharp
 let createTimerAndObservable tickrate =
@@ -71,67 +81,17 @@ let createTimerAndObservable tickrate =
             timer.Stop()
         }
     task, observable
+
+//...
+let timer, eventStream = createTimerAndObservable 1000
+timerEventStream |> Observable.subscribe (fun _ -> printfn "tick %A" DateTime.Now)
+Async.RunSynchronously timer
 ```
 
 <!--
-- Traditionel .NET: Imperativ, side-effekt baseret event-håndtering med `event.Add`.
-- Reaktiv tilgang: Abstraherer hændelser til en 'observable'.
-- Observable: Repræsenterer en strøm af fremtidige hændelser.
--->
-
----
-
-### IObservable<'T> Interface
-
-- Core abstraction in reactive programming
-- Represents a stream of values over time
-- Push-based (vs pull-based like IEnumerable)
-- Subscribe with an observer to receive notifications
-
-```fsharp
-type IObservable<'T> =
-    abstract Subscribe: IObserver<'T> -> IDisposable
-
-type IObserver<'T> =
-    abstract OnNext: 'T -> unit
-    abstract OnError: exn -> unit
-    abstract OnCompleted: unit -> unit
-```
-
-<!--
-- `IObservable<'T>`: Produceren. Repræsenterer strømmen. Har kun `Subscribe` metode.
-- `IObserver<'T>`: Forbrugeren. Lytter til strømmen. Har tre metoder:
-    - `OnNext`: For hver ny værdi.
-    - `OnError`: Ved fejl.
-    - `OnCompleted`: Når strømmen slutter.
-- Model: "Push"-baseret. Producer skubber data til forbruger. Modsat "pull" i `IEnumerable`.
--->
-
----
-
-### Simple setup
-
-```fsharp
-// Create observable from event
-let timer = new System.Timers.Timer(1000.0)
-let observable = timer.Elapsed
-
-// Subscribe to observable
-let subscription =
-    observable.Subscribe(fun _ ->
-        printfn "Tick!")
-
-timer.Start()
-
-// Clean up
-subscription.Dispose()
-timer.Stop()
-```
-
-<!--
-- Oprettelse: Konverter .NET event til observable.
-- Abonnement: Kald `Subscribe` med en funktion (en simpel observer).
-- Oprydning: `Subscribe` returnerer et `IDisposable` (abonnementet). Kald `Dispose()` for at afmelde og stoppe med at lytte.
+- Reaktiv tilgang: Abstraherer events til en 'observable'.
+- Observable: Repræsenterer en stream af fremtidige events.
+- Forskel: I stedet for at registrere - subscribe til
 -->
 
 ---
@@ -142,122 +102,83 @@ timer.Stop()
 - Transform streams like collections
 
 ```fsharp
-open System
-
-// Filter events
-Observable.filter (fun x -> x % 2 = 0)
-
-// Map/transform events
 Observable.map (fun x -> x * 2)
-
-// Combine streams
+Observable.filter (fun x -> x % 2 = 0)
 Observable.merge observable1 observable2
-
-// Take first N events
-Observable.take 5
+Observable.scan collector state source
 ```
 
 <!--
-- `Observable` modul: Tilbyder funktionelle operatorer til at manipulere strømme.
+- `Observable` module: Tilbyder functional operators til at manipulere streams.
 - Velkendte funktioner: `filter`, `map`, `merge`, `take` etc., ligesom på lister.
-- Gør det muligt at bygge deklarative pipelines for hændelser.
+- Gør det muligt at bygge declarative pipelines for events.
 -->
 
 ---
 
-### Practical Example: Mouse Clicks
+### Practical Example: Counter
+
+**Event Piping**
 
 ```fsharp
-let clicks = button.Click // IEvent<_>
+let createTimerAndObservable tickrate =
+    let timer = new System.Timers.Timer(float tickrate)
+    timer.AutoReset <- true
+    let observable =
+        timer.Elapsed |> Observable.map (fun _ -> 1) |> Observable.scan (+) 0
+    let task = async { timer.Start() }
 
-clicks
-|> Observable.map (fun _ -> 1)
-|> Observable.scan (+) 0
-|> Observable.add (fun count ->
-    printfn "Clicked %d times" count)
+    task, observable
+
+let counterPrinter i = printfn "Recieved number: %i" i
+let timer, eventStream = createTimerAndObservable 1000
+
+eventStream
+|> Observable.filter (fun i -> i % 2 = 0)
+|> Observable.subscribe counterPrinter
+
+Async.RunSynchronously timer
 ```
 
-- This counts clicks functionally without mutable state
-
 <!--
-- Udfordring: Tæl klik uden mutabel tilstand.
-- Pipeline:
-  1. `map` hvert klik til `1`.
-  2. `scan` (akkumuler) summen. `scan` er som `fold`, men udsender hver mellemværdi.
-  3. `add` (subscribe) for at udføre side-effekt (print).
-- Resultat: Ren, funktionel og deklarativ løsning.
+Udfordring: Counter uden mutable state
+- Bruger event piping
+- Timer-tick observable convertes med map til et int-event
+- Scan accumulater int event's
+- Subscriber kan pipe eventStreamen videre, hvis den vil
   -->
 
 ---
 
-### Complexity with event piping
-
-- Problem: Multiple event sources, filtering, throttling
+### Complex Scenario: Merging observables
 
 ```fsharp
-// Without reactive: messy, stateful
-let mutable lastClick = DateTime.MinValue
-let clickHandler _ =
-    let now = DateTime.Now
-    if (now - lastClick).TotalMilliseconds > 300 then
-        lastClick <- now
-        // handle click
+let createTimerAndObservable tickrate =
+    let timer = new System.Timers.Timer(float tickrate)
+    timer.AutoReset <- true
+
+    let observable =
+        timer.Elapsed |> Observable.map (fun _ -> 1) |> Observable.scan (+) 0
+
+    let task = async { timer.Start() }
+
+    task, observable
+
+let counterPrinter i = printfn "Recieved number: %A" i
+let timerS, eventStreamS = createTimerAndObservable 1000
+let timerDS, eventStreamDS = createTimerAndObservable 100
+
+eventStreamDS
+|> Observable.map (fun i -> float i / 10.0)
+|> Observable.filter (fun i -> i % 1.0 <> 0.0)
+|> Observable.merge (eventStreamS |> Observable.map (fun i -> float i))
+|> Observable.subscribe counterPrinter
+
+Async.RunSynchronously timerS
+Async.RunSynchronously timerDS
+
+System.Console.ReadLine()
 ```
-
-- Requires manual state management and timing logic
-
-<!--
-- Komplekst scenarie: "Throttling" (ignorer klik, der kommer for hurtigt).
-- Imperativ løsning: Kræver manuel, mutabel tilstand (`lastClick`) og if/else logik.
-- Bliver hurtigt komplekst og fejlbehæftet.
-  -->
-
----
-
-### Reactive Solution
-
-```fsharp
-// With reactive: declarative, composable
-button.Click
-|> Observable.throttle (TimeSpan.FromMilliseconds(300))
-|> Observable.add (printfn "Clicked!")
-```
-
-- Clean, functional, and self-documenting
-
-<!--
-- Reaktiv løsning: Brug `throttle` operatoren.
-- Pipelinen er simpel, deklarativ og selv-dokumenterende.
-- "Tag klik, begræns dem til max én hver 300ms, og reager så".
--->
-
----
-
-### Complex Scenario: Autocomplete
-
-```fsharp
-textBox.TextChanged
-|> Observable.map (fun _ -> textBox.Text)
-|> Observable.filter (fun text -> text.Length > 2)
-|> Observable.distinctUntilChanged
-|> Observable.throttle (TimeSpan.FromMilliseconds(500))
-|> Observable.map searchAPI
-|> Observable.switch
-|> Observable.add displayResults
-```
-
-<!--
-- Autocomplete er et perfekt eksempel på styrken i RP.
-- Pipeline-forklaring:
-    1. `map` til tekst.
-    2. `filter` på længde.
-    3. `distinctUntilChanged` for at undgå unødige kald.
-    4. `throttle` for at vente på pause i skrivning.
-    5. `map` til asynkront `searchAPI` kald.
-    6. `switch`: Annullerer forrige kald, hvis et nyt kommer. Undgår race conditions.
-    7. `add` for at vise resultater.
-- Umuligt at implementere elegant manuelt.
--->
 
 ---
 
@@ -266,116 +187,16 @@ textBox.TextChanged
 - **Declarative**: Describe what, not how
 - **Composable**: Chain operations like pipelines
 - **Less state**: No mutable variables to track
-- **Error handling**: Centralized with `Observable.catch`
-- **Cancellation**: Built-in with `IDisposable`
-- **Testable**: Pure functions, easy to mock
+- **RxNET**: More features
+  - Error handling: `Observable.catch`
+  - `Observable.Create`
+    - OnNext, OnError, OnCompleted
 
 <!--
-- **Deklarativt:** Lettere at læse og forstå intentionen.
-- **Komponerbart:** Byg komplekse systemer af simple operatorer.
-- **Mindre tilstand:** Undgå mutabilitet og de fejl, det medfører.
-- **Fejlhåndtering:** Centraliseret med `catch`. Fejl er blot en besked i strømmen.
-- **Annullering:** Indbygget, robust oprydning via `IDisposable`.
-- **Testbarhed:** Rene funktioner i pipelinen er lette at enhedsteste.
--->
-
----
-
-### Hot vs Cold Observables
-
-**Cold Observable**: Produces values on subscription
-
-- Each subscriber gets own sequence
-- Example: HTTP request observable
-
-**Hot Observable**: Produces values regardless of subscribers
-
-- All subscribers share same sequence
-- Example: Mouse moves, timer events
-
-```fsharp
-// Cold: new timer per subscriber
-let cold = Observable.interval 1000
-// Hot: shared timer
-let timer = new Timer(1000.0)
-let hot = timer.Elapsed
-```
-
-<!--
-- **Kold Observable**: Starter først ved abonnement. Hver abonnent får sin egen private sekvens (f.eks. et HTTP-kald).
-- **Varm Observable**: Producerer værdier uafhængigt af abonnenter. Abonnenter deler den samme strøm (f.eks. muse-events).
-- Eksempel: `Observable.interval` er kold (ny timer pr. abonnent), `timer.Elapsed` er varm (deler én timer).
--->
-
----
-
-### Common Operators
-
-```fsharp
-// Debounce: Wait for pause in events
-Observable.throttle (TimeSpan.FromMilliseconds(300))
-// Distinct: Skip duplicate consecutive values
-Observable.distinctUntilChanged
-// Scan: Accumulate like fold
-Observable.scan (+) 0
-// Combine: Merge multiple streams
-Observable.merge stream1 stream2
-// Switch: Cancel previous, take latest
-Observable.switch
-```
-
-<!--
-- `throttle`: Vent på pause i hændelser (godt til brugerinput).
-- `distinctUntilChanged`: Undgå unødvendigt arbejde.
-- `scan`: Akkumuler tilstand funktionelt (reaktiv `fold`).
-- `merge`: Kombiner flere strømme til én.
-- `switch`: Essentiel til asynkrone opgaver for at undgå race conditions.
--->
-
----
-
-### Error Handling
-
-```fsharp
-observable
-|> Observable.map riskyOperation
-|> Observable.catch (fun ex ->
-    printfn "Error: %s" ex.Message
-    Observable.empty)
-|> Observable.add processResult
-```
-
-- Errors propagate through pipeline and can be handled gracefully
-
-<!--
-- Fejl (exceptions) i en pipeline crasher ikke programmet.
-- De bliver til en `OnError` notifikation, der sendes ned gennem pipelinen.
-- `catch`-operatoren fanger fejlen og lader os reagere, f.eks. ved at returnere en tom strøm (`Observable.empty`) eller en default-værdi.
--->
-
----
-
-### Reactive vs Async
-
-Both handle asynchrony, but different use cases:
-**Async**: Single future value
-
-```fsharp
-let! result = downloadAsync url
-```
-
-**Reactive**: Stream of values over time
-
-```fsharp
-clicks |> Observable.add handler
-```
-
-- Can combine them: `Observable.ofAsync` and `Async.AwaitObservable`
-
-<!--
-- `async`: Repræsenterer en _enkelt_ fremtidig værdi (en asynkron `T`).
-- `observable`: Repræsenterer en _strøm_ af mange værdier over tid (en asynkron `IEnumerable<T>`).
-- De kan kombineres: Konverter mellem `async` og `observable` for at bruge det bedste værktøj til opgaven.
+- **Declarative:** Lettere at læse og forstå intentionen.
+- **Composable:** Byg komplekse systemer af simple operators.
+- **Mindre state:** Undgå mutability og de fejl, det medfører.
+- **RxNET**: Giver adgang til flere features, bl.a. error handling
 -->
 
 ---

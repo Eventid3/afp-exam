@@ -7,7 +7,7 @@ MD_FILES=$(wildcard *.md)
 HTML_FILES=$(patsubst %.md,slides/%.html,$(MD_FILES))
 
 slide:
-	npx @marp-team/marp-cli@latest -w $(file) --allow-local-files -o ./slides/$(htmlname) & brave ~/uni/6_semester/afp/slides/$(htmlname)
+	npx @marp-team/marp-cli@latest -w $(file) --allow-local-files -o ./slides/$(htmlname) & brave ~/uni/6_semester/afp/afp-exam/slides/$(htmlname)
 
 all: $(HTML_FILES)
 	@mkdir -p slides/img

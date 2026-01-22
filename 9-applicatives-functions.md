@@ -16,7 +16,7 @@ style: |
 
 ### Functions - first class citizens
 
-- Functions can be both lower order and higher order
+- Functions can be both first-order and higher-order
 - Functions can have inner functions
 - Can be chained together
   - Composition
@@ -25,12 +25,14 @@ style: |
 <!--
 - "First-class citizens": Funktioner kan behandles som enhver anden værdi (int, string etc.).
 - Kan gemmes i variable, sendes som argumenter, og returneres fra andre funktioner.
+- Higher-order: funktioner som argumenter og/eller returværdier til/fra funktioner
+- First-order: funktioner som tager værdier som argumenter og returnerer værdier
 - Kan kædes sammen med komposition (`>>`) og pipe (`|>`).
 -->
 
 ---
 
-### Functions - lower order
+### Functions - first-order
 
 ```fsharp
 let square x = x * x
@@ -41,13 +43,13 @@ isEven 7        // false
 ```
 
 <!--
-- Lower-order: Basale funktioner, der opererer på simple data (ikke på andre funktioner).
+- First-order: Basale funktioner, der opererer på simple data (ikke på andre funktioner).
 - Fundamentale byggeklodser.
 -->
 
 ---
 
-### Functions - higher order
+### Functions - higher-order
 
 ```fsharp
 let applyTwice f a = f (f a)
@@ -166,10 +168,9 @@ let apply fOpt xOpt =
     | Some f, Some x -> Some (f x)
     | _ -> None
 
-let result =
-    Some add
-    |> apply <| x   // Some (add 3) = Some (fun y -> 3 + y)
-    |> apply <| y   // Some 8
+let (<*>) = apply
+
+let result = Some add <*> x <*> y  // Some 8
 ```
 
 <!--
